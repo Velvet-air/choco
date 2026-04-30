@@ -1,4 +1,12 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(bun run test *)",
+      "Bash(bun run typecheck *)",
+      "Bash(bun lint *)",
+      "Bash(npx shadcn@latest *)"
+    ]
+  },
   "hooks": {
     "WorktreeCreate": [
       {
