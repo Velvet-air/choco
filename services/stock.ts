@@ -1,6 +1,7 @@
 import YahooFinance from 'yahoo-finance2'
 import type { StockData } from '@/types/stock'
 import { resolveKrTicker } from '@/lib/kr-stocks'
+import { translateToKo } from '@/lib/translate'
 
 // yahoo-finance2 v3: 클래스 인스턴스 필요 (default export = class, not instance)
 const yf = new YahooFinance()
@@ -33,13 +34,18 @@ export async function fetchStockData(query: string): Promise<StockData> {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - SPARKLINE_DAYS * 2)
 
-  const [quoteData, historical] = await Promise.all([
+  // 검색 결과의 영문 회사명으로 뉴스 재검색 → 종목별 고유 뉴스
+  const newsQuery = (equityQuote as Record<string, unknown>).shortname as string | undefined
+    ?? ticker.split('.')[0]
+
+  const [quoteData, historical, newsResult] = await Promise.all([
     yf.quote(ticker),
     yf.historical(ticker, {
       period1: startDate.toISOString().split('T')[0],
       period2: endDate.toISOString().split('T')[0],
       interval: '1d',
     }),
+    yf.search(newsQuery, { newsCount: MAX_NEWS, quotesCount: 0 }),
   ])
 
   if (!quoteData.regularMarketPrice) throw new NotFoundError('종목을 찾을 수 없습니다')
@@ -49,8 +55,13 @@ export async function fetchStockData(query: string): Promise<StockData> {
     .map((d) => d.close)
     .filter((v): v is number => typeof v === 'number')
 
-  const news = (searchResult.news ?? []).slice(0, MAX_NEWS).map((n) => ({
-    title: n.title ?? '',
+  // newsResult가 비면 초기 검색 결과로 fallback
+  const rawNews = ((newsResult.news?.length ? newsResult.news : searchResult.news) ?? []).slice(0, MAX_NEWS)
+  const titles = rawNews.map((n) => n.title ?? '')
+  const translatedTitles = await translateToKo(titles)
+
+  const news = rawNews.map((n, i) => ({
+    title: translatedTitles[i] ?? n.title ?? '',
     url: n.link ?? '',
   }))
 
