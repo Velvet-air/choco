@@ -3,7 +3,8 @@ set -e
 
 # Read worktree name from stdin (JSON: {"name": "..."})
 INPUT=$(cat)
-NAME=$(echo "$INPUT" | jq -r '.name')
+# jq 없이 JSON에서 name 추출 (sed 사용)
+NAME=$(echo "$INPUT" | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 WORKTREE_PATH="$PROJECT_ROOT/.claude/worktrees/$NAME"
 
