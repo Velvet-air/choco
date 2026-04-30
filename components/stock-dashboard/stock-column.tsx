@@ -13,35 +13,32 @@ function fmt(n: number) {
   return Math.round(n).toLocaleString('ko-KR')
 }
 
-function Sparkline({ data }: { data: number[] }) {
+function Sparkline({ data, rising }: { data: number[]; rising: boolean }) {
   if (!data.length) return null
-  const W = 120
-  const H = 40
+  const W = 200
+  const H = 48
   const min = Math.min(...data)
   const max = Math.max(...data)
   const range = max - min || 1
   const points = data
     .map((v, i) => {
       const x = data.length === 1 ? W / 2 : (i / (data.length - 1)) * W
-      const y = H - ((v - min) / range) * (H - 4) - 2
+      const y = H - ((v - min) / range) * (H - 6) - 3
       return `${x},${y}`
     })
     .join(' ')
 
-  const rising = data[data.length - 1] >= data[0]
+  const color = rising ? '#00c853' : '#ff4444'
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className={`h-10 w-full ${rising ? 'text-red-500' : 'text-blue-500'}`}
-      preserveAspectRatio="none"
-    >
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-12 w-full" preserveAspectRatio="none">
       <polyline
         points={points}
         fill="none"
-        stroke="currentColor"
+        stroke={color}
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
+        opacity="0.9"
       />
     </svg>
   )
@@ -65,71 +62,66 @@ export function StockColumn({ ticker, name, selected, onSelect }: Props) {
 
   const isRising = (data?.change ?? 0) > 0
   const isFalling = (data?.change ?? 0) < 0
-  const changeColor = isRising
-    ? 'text-red-500'
-    : isFalling
-      ? 'text-blue-500'
-      : 'text-muted-foreground'
+  const changeColor = isRising ? '#00c853' : isFalling ? '#ff4444' : '#888'
+  const changeSign = isRising ? '+' : ''
 
   return (
     <div
       onClick={onSelect}
-      className={`flex min-w-52 max-w-64 cursor-pointer flex-col gap-3 border-r p-4 transition-colors ${
-        selected ? 'bg-muted ring-2 ring-inset ring-ring' : 'hover:bg-muted/50'
-      }`}
+      className="w-full cursor-pointer border-b border-gray-100 transition-colors"
+      style={{ backgroundColor: selected ? '#f0f4ff' : '#ffffff' }}
     >
-      {/* 종목명 */}
-      <div>
-        <p className="font-semibold">{name}</p>
-        <p className="text-xs text-muted-foreground">{ticker}</p>
+      <div className="flex items-center gap-4 px-4 py-3">
+
+        {/* 왼쪽: 종목 정보 */}
+        <div className="flex w-40 shrink-0 flex-col gap-0.5">
+          <span className="font-mono text-[13px] font-bold text-blue-500">
+            {name}
+          </span>
+          {error ? (
+            <span className="text-[12px] text-gray-400">불러오기 실패</span>
+          ) : !data ? (
+            <span className="text-[12px] text-gray-300">로딩 중…</span>
+          ) : (
+            <>
+              <span className="font-mono text-[20px] font-bold text-gray-900">
+                {fmt(data.price)}
+              </span>
+              <span className="font-mono text-[12px]" style={{ color: changeColor }}>
+                {changeSign}{fmt(data.change)} {changeSign}{data.changePct.toFixed(2)}%
+              </span>
+              <span className="font-mono text-[11px] text-gray-400">
+                고 {fmt(data.high)} · 저 {fmt(data.low)}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* 가운데: 스파크라인 */}
+        <div className="flex w-40 shrink-0 items-center">
+          {data && <Sparkline data={data.sparkline} rising={isRising} />}
+        </div>
+
+        {/* 오른쪽: 뉴스 */}
+        <div className="flex w-64 shrink-0 flex-col gap-1 px-3 py-2">
+          {data?.news.length === 0 && (
+            <span className="text-[11px] text-gray-400">뉴스 없음</span>
+          )}
+          {data?.news.slice(0, 4).map((n) => (
+            <a
+              key={n.url}
+              href={n.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="line-clamp-1 text-[11px] text-gray-600 transition-colors hover:text-gray-900"
+            >
+              {n.title}
+            </a>
+          ))}
+        </div>
+
       </div>
-
-      {error ? (
-        <p className="text-sm text-muted-foreground">데이터를 불러올 수 없습니다</p>
-      ) : !data ? (
-        <p className="text-sm text-muted-foreground">로딩 중…</p>
-      ) : (
-        <>
-          {/* 현재가 */}
-          <p className="text-2xl font-bold">{fmt(data.price)}원</p>
-
-          {/* 등락 */}
-          <p className={`text-sm font-medium ${changeColor}`}>
-            {isRising ? '▲' : isFalling ? '▼' : '─'}{' '}
-            {isRising ? '+' : ''}{fmt(data.change)}원 / {isRising ? '+' : ''}{data.changePct.toFixed(2)}%
-          </p>
-
-          {/* 고저가 */}
-          <p className="text-xs text-muted-foreground">
-            고 {fmt(data.high)} &nbsp; 저 {fmt(data.low)}
-          </p>
-
-          {/* 스파크라인 */}
-          <div className="h-10">
-            <Sparkline data={data.sparkline} />
-          </div>
-
-          {/* 뉴스 */}
-          <div className="flex flex-col gap-1">
-            {data.news.length === 0 ? (
-              <p className="text-xs text-muted-foreground">뉴스 없음</p>
-            ) : (
-              data.news.slice(0, 5).map((n) => (
-                <a
-                  key={n.url}
-                  href={n.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="line-clamp-2 text-xs text-muted-foreground underline-offset-2 hover:underline"
-                >
-                  {n.title}
-                </a>
-              ))
-            )}
-          </div>
-        </>
-      )}
     </div>
   )
 }
