@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
@@ -11,14 +11,22 @@ export function AddTickerForm({ onAdd }: Props) {
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
 
   const handleSubmit = async () => {
     const trimmed = query.trim()
     if (!trimmed) return
+
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setError(null)
     setLoading(true)
     try {
-      const res = await fetch(`/api/stock/${encodeURIComponent(trimmed)}`)
+      const res = await fetch(`/api/stock/${encodeURIComponent(trimmed)}`, {
+        signal: controller.signal,
+      })
       if (!res.ok) {
         const body = await res.json()
         setError(body.error ?? '종목을 찾을 수 없습니다')
@@ -27,7 +35,8 @@ export function AddTickerForm({ onAdd }: Props) {
       const data = await res.json()
       onAdd(data.ticker, data.name)
       setQuery('')
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
       setError('데이터를 불러올 수 없습니다')
     } finally {
       setLoading(false)

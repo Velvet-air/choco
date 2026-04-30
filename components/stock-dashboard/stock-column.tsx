@@ -30,11 +30,15 @@ function Sparkline({ data }: { data: number[] }) {
 
   const rising = data[data.length - 1] >= data[0]
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none">
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className={`w-full ${rising ? 'text-red-500' : 'text-blue-500'}`}
+      preserveAspectRatio="none"
+    >
       <polyline
         points={points}
         fill="none"
-        stroke={rising ? 'rgb(239 68 68)' : 'rgb(59 130 246)'}
+        stroke="currentColor"
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -110,9 +114,9 @@ export function StockColumn({ ticker, name, selected, onSelect }: Props) {
             {data.news.length === 0 ? (
               <p className="text-xs text-muted-foreground">뉴스 없음</p>
             ) : (
-              data.news.slice(0, 5).map((n, i) => (
+              data.news.slice(0, 5).map((n) => (
                 <a
-                  key={i}
+                  key={n.url}
                   href={n.url}
                   target="_blank"
                   rel="noopener noreferrer"

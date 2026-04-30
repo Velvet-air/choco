@@ -6,8 +6,13 @@ const yf = new YahooFinance()
 
 const MAX_NEWS = 5
 const SPARKLINE_DAYS = 10
+const QUERY_MAX_LEN = 20
+const QUERY_RE = /^[A-Za-z0-9.\-]+$/
 
 export async function fetchStockData(query: string): Promise<StockData> {
+  if (!query || query.length > QUERY_MAX_LEN || !QUERY_RE.test(query)) {
+    throw new NotFoundError('유효하지 않은 종목코드입니다')
+  }
   const searchResult = await yf.search(query, { newsCount: MAX_NEWS })
 
   // EQUITY 종목의 심볼 추출

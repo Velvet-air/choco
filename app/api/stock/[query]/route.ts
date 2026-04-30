@@ -7,7 +7,7 @@ export async function GET(
   const { query } = await params
 
   try {
-    const data = await fetchStockData(decodeURIComponent(query))
+    const data = await fetchStockData(query)
     return Response.json(data)
   } catch (err) {
     if (err instanceof NotFoundError) {

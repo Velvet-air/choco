@@ -10,7 +10,15 @@ export function useWatchlist() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) setEntries(JSON.parse(stored))
+      if (!stored) return
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) {
+        const valid = parsed.filter(
+          (e): e is WatchlistEntry =>
+            typeof e?.ticker === 'string' && typeof e?.name === 'string',
+        )
+        setEntries(valid)
+      }
     } catch {}
   }, [])
 
