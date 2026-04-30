@@ -32,7 +32,7 @@ function Sparkline({ data }: { data: number[] }) {
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      className={`w-full ${rising ? 'text-red-500' : 'text-blue-500'}`}
+      className={`h-10 w-full ${rising ? 'text-red-500' : 'text-blue-500'}`}
       preserveAspectRatio="none"
     >
       <polyline

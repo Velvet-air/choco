@@ -33,11 +33,11 @@ export function Dashboard() {
       </header>
 
       {/* 종목 컬럼 영역 */}
-      <main className="flex flex-1 overflow-x-auto">
+      <main className="flex-1 overflow-x-auto">
         {entries.length === 0 ? (
           <WatchlistEmpty />
         ) : (
-          <div className="flex">
+          <div className="flex h-full min-w-max">
             {entries.map((entry) => (
               <StockColumn
                 key={entry.ticker}

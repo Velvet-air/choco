@@ -1,19 +1,25 @@
 import YahooFinance from 'yahoo-finance2'
 import type { StockData } from '@/types/stock'
+import { resolveKrTicker } from '@/lib/kr-stocks'
 
 // yahoo-finance2 v3: 클래스 인스턴스 필요 (default export = class, not instance)
 const yf = new YahooFinance()
 
 const MAX_NEWS = 5
 const SPARKLINE_DAYS = 10
-const QUERY_MAX_LEN = 20
-const QUERY_RE = /^[A-Za-z0-9.\-]+$/
+const QUERY_MAX_LEN = 30
+const QUERY_RE = /^[A-Za-z0-9가-힣\s.\-&]+$/
 
 export async function fetchStockData(query: string): Promise<StockData> {
-  if (!query || query.length > QUERY_MAX_LEN || !QUERY_RE.test(query)) {
+  const trimmed = query.trim()
+  if (!trimmed || trimmed.length > QUERY_MAX_LEN || !QUERY_RE.test(trimmed)) {
     throw new NotFoundError('유효하지 않은 종목코드입니다')
   }
-  const searchResult = await yf.search(query, { newsCount: MAX_NEWS })
+
+  // 한국어 종목명 → 티커코드 자동 변환
+  const resolved = resolveKrTicker(trimmed) ?? trimmed
+
+  const searchResult = await yf.search(resolved, { newsCount: MAX_NEWS })
 
   // EQUITY 종목의 심볼 추출
   const equityQuote = searchResult.quotes?.find(
@@ -48,9 +54,12 @@ export async function fetchStockData(query: string): Promise<StockData> {
     url: n.link ?? '',
   }))
 
+  // 한국어 이름으로 검색했으면 해당 이름을 우선 표시
+  const krName = resolveKrTicker(trimmed) ? trimmed : null
+
   return {
     ticker,
-    name: quoteData.shortName ?? quoteData.longName ?? ticker,
+    name: krName ?? quoteData.shortName ?? quoteData.longName ?? ticker,
     price: Math.round(quoteData.regularMarketPrice),
     change: Math.round(quoteData.regularMarketChange ?? 0),
     changePct: Number((quoteData.regularMarketChangePercent ?? 0).toFixed(2)),

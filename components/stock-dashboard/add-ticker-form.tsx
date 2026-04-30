@@ -51,7 +51,7 @@ export function AddTickerForm({ onAdd }: Props) {
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <Input
-          placeholder="종목코드 입력 (예: 005930)"
+          placeholder="종목명 또는 코드 (예: 삼성전자, 005930)"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
