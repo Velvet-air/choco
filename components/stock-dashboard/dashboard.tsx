@@ -2,37 +2,12 @@
 import { useState } from 'react'
 import { useWatchlist } from '@/hooks/use-watchlist'
 import { WatchlistEmpty } from './watchlist-empty'
-import { Input } from '@/components/ui/input'
+import { AddTickerForm } from './add-ticker-form'
 import { Button } from '@/components/ui/button'
 
 export function Dashboard() {
   const { entries, add, remove } = useWatchlist()
-  const [query, setQuery] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
-
-  const handleAdd = async () => {
-    const trimmed = query.trim()
-    if (!trimmed) return
-    setError(null)
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/stock/${encodeURIComponent(trimmed)}`)
-      if (!res.ok) {
-        const body = await res.json()
-        setError(body.error ?? '종목을 찾을 수 없습니다')
-        return
-      }
-      const data = await res.json()
-      add(data.ticker, data.name)
-      setQuery('')
-    } catch {
-      setError('데이터를 불러올 수 없습니다')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleRemove = () => {
     if (!selectedTicker) return
@@ -40,39 +15,20 @@ export function Dashboard() {
     setSelectedTicker(null)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleAdd()
-  }
-
   return (
     <div className="flex h-screen flex-col">
       {/* 상단 툴바 */}
       <header className="flex items-center gap-2 border-b px-4 py-2">
-        <div className="flex flex-1 flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="종목코드 입력 (예: 005930)"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="max-w-xs"
-              disabled={loading}
-            />
-            <Button onClick={handleAdd} disabled={loading || !query.trim()} size="icon" title="종목 추가">
-              +
-            </Button>
-            <Button
-              onClick={handleRemove}
-              disabled={!selectedTicker}
-              variant="outline"
-              size="icon"
-              title="선택 종목 삭제"
-            >
-              −
-            </Button>
-          </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
-        </div>
+        <AddTickerForm onAdd={add} />
+        <Button
+          onClick={handleRemove}
+          disabled={!selectedTicker}
+          variant="outline"
+          size="icon"
+          title="선택 종목 삭제"
+        >
+          −
+        </Button>
       </header>
 
       {/* 종목 컬럼 영역 */}
