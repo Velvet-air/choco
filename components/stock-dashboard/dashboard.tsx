@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useWatchlist } from '@/hooks/use-watchlist'
 import { WatchlistEmpty } from './watchlist-empty'
 import { AddTickerForm } from './add-ticker-form'
+import { StockColumn } from './stock-column'
 import { Button } from '@/components/ui/button'
 
 export function Dashboard() {
@@ -36,22 +37,17 @@ export function Dashboard() {
         {entries.length === 0 ? (
           <WatchlistEmpty />
         ) : (
-          <div className="flex gap-0">
+          <div className="flex">
             {entries.map((entry) => (
-              <div
+              <StockColumn
                 key={entry.ticker}
-                onClick={() =>
+                ticker={entry.ticker}
+                name={entry.name}
+                selected={selectedTicker === entry.ticker}
+                onSelect={() =>
                   setSelectedTicker((prev) => (prev === entry.ticker ? null : entry.ticker))
                 }
-                className={`flex min-w-52 cursor-pointer flex-col border-r p-4 transition-colors ${
-                  selectedTicker === entry.ticker
-                    ? 'bg-muted ring-2 ring-inset ring-ring'
-                    : 'hover:bg-muted/50'
-                }`}
-              >
-                <p className="font-semibold">{entry.name}</p>
-                <p className="text-sm text-muted-foreground">{entry.ticker}</p>
-              </div>
+              />
             ))}
           </div>
         )}
